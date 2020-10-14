@@ -34,7 +34,6 @@ pool = [[[randint(100, display_width - 100),
          randint(50, 100), randint(0, 360)] for i in range(number_of_balls)]
 
 
-
 def move_ball():
     """
     Функция передвигает мячи
