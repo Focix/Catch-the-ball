@@ -87,17 +87,22 @@ while not finished:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             for unit in pool:
                 if (event.pos[0] - unit[0][0] ) ** 2 + (event.pos[1] - unit[0][1]) ** 2 <= unit[1] ** 2:
-                    score += 1
+                    if unit[1] <= 20:
+                        score += 2
+                    else:
+                        score += 1
                     pool.remove(unit)
+                    pool.append([[randint(100, display_width - 100), randint(100, display_height - 100)],
+                                 randint(10, 70), COLORS[randint(0, 5)], randint(50, 100), randint(0, 360)])
                     miss = False
                     break
             if miss:
                 score -= 1
                 break
-            if pool == []:
-                print('Your score is',score)
+            if pygame.time.get_ticks() > 20000:
+                print('You ran out of time')
+                print('Your score is', score)
                 finished = True
-                break
     move_ball()
     score_bar(score)
     pygame.display.update()
