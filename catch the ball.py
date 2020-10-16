@@ -25,48 +25,42 @@ CYAN = (0, 255, 255)
 BLACK = (0, 0, 0)
 COLORS = [RED, BLUE, YELLOW, GREEN, MAGENTA, CYAN]
 
-# список, хранящий характеристики всеъ шаров
-# [координата x, координата y], радиус, цвет, скорость, угол
-global pool
-pool = [[[randint(100, display_width - 100),
-          randint(100, display_height - 100)],
-         randint(10, 70), COLORS[randint(0, 5)],
-         randint(50, 100), randint(0, 360)] for i in range(number_of_balls)]
+class Ball:
 
+    def __init__(self, x, y, r, v, color, angle):
+        self.x = x
+        self.y = y
+        self.r = r
+        self.v = v
+        self.color = color
+        self.angle = angle
 
-def move_ball():
-    """
-    Функция передвигает мячи
-    """
-    for item in pool:
-        bump(item)
-        item[0][0] += int(item[3] / FPS * np.cos(np.pi * item[4] / 180))
-        item[0][1] -= int(item[3] / FPS * np.sin(np.pi * item[4] / 180))
-        circle(screen, item[2], item[0], item[1])
+    def move_ball(self):
+        self.x += int(self.v / FPS * np.cos(np.pi * self.angle / 180))
+        self.y += int(self.v / FPS * np.sin(np.pi * self.angle / 180))
+        circle(screen, self.color, [self.x, self.y], self.r)
 
-
-def bump(item):
-    """
-    Функция проверяет удар мячика о стенку и считает новый угол
-    unit - элемент списка pool, хранящий все характеричтики данного шара
-    """
-    # проверка на удар в вертикальные стены
-    if item[0][0] + item[1] > display_width - 5:
-        if item[4] <= 180:
-            item[4] = 180 - item[4]
-        else:
-            item[4] = 540 - item[4]
-    if item[0][0] - item[1] <= 5:
-        if item[4] <= 180:
-            item[4] = 180 - item[4]
-        else:
-            item[4] = 540 - item[4]
-    # проверка на удар в горизонтальные стены
-    if item[0][1] + item[1] >= display_height - 5:
-        item[4] = 360 - item[4]
-    if item[0][1] - item[1] <= 5:
-        item[4] = 360 - item[4]
-
+def bump(ball):
+        """
+        Функция проверяет удар мячика о стенку и считает новый угол
+        ball - элемент списка pool, хранящий все характериcтики данного шара
+        """
+        # проверка на удар в вертикальные стены
+        if ball.x + ball.r > display_width - 5:
+            if ball.angle <= 180:
+                ball.angle = 180 - ball.angle
+            else:
+                ball.angle = 540 - ball.angle
+        if ball.x - ball.r <= 5:
+            if ball.angle <= 180:
+                ball.angle = 180 - ball.angle
+            else:
+                ball.angle = 540 - ball.angle
+        # проверка на удар в горизонтальные стены
+        if ball.y + ball.r >= display_height - 5:
+            ball.angle = 360 - ball.angle
+        if ball.y - ball.r <= 5:
+            ball.angle = 360 - ball.angle
 
 def score_bar(s):
     """
@@ -76,6 +70,15 @@ def score_bar(s):
     score_line = 'Score' + ':' + str(s)
     score_text = score_screen.render(score_line, 1, (180, 0, 0))
     screen.blit(score_text, (0, 10))
+
+pool = [] # список всех мячей
+for i in range(number_of_balls):
+    ball = Ball(randint(100, display_width - 100),
+                                  randint(100, display_height - 100),
+                                 randint(10, 70), randint(50, 100),
+                                COLORS[randint(0, 5)],randint(0, 360))
+    pool.append(ball)
+
 
 
 pygame.display.update()
@@ -90,18 +93,20 @@ while not finished:
             finished = True
             break
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            for unit in pool:
-                if (event.pos[0] - unit[0][0]) ** 2 + \
-                        (event.pos[1] - unit[0][1]) ** 2 <= unit[1] ** 2:
-                    if unit[1] <= 20:
+            for ball in pool:
+                if (event.pos[0] - ball.x) ** 2 + \
+                        (event.pos[1] - ball.y) ** 2 <= ball.r ** 2:
+                    if ball.r <= 20:
                         score += 2
                     else:
                         score += 1
-                    pool.remove(unit)
-                    pool.append([[randint(100, display_width - 100),
-                                  randint(100, display_height - 100)],
-                                 randint(10, 70), COLORS[randint(0, 5)],
-                                 randint(50, 100), randint(0, 360)])
+                    pool.remove(ball)
+                    new_ball = Ball(randint(100, display_width - 100),
+                                  randint(100, display_height - 100),
+                                 randint(10, 70), randint(50, 100),
+                                COLORS[randint(0, 5)],randint(0, 360))
+                    pool.append(new_ball)
+
                     miss = False
                     break
             if miss:
@@ -111,7 +116,9 @@ while not finished:
                 print('You ran out of time')
                 print('Your score is', score)
                 finished = True
-    move_ball()
+    for ball in pool:
+        bump(ball)
+        ball.move_ball()
     score_bar(score)
     pygame.display.update()
     screen.fill(BLACK)
