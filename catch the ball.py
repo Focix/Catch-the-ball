@@ -10,9 +10,11 @@ score = 0
 FPS = 30
 display_width = 1200
 display_height = 700
-screen = pygame.display.set_mode((display_width, display_height))
 number_of_balls = 8
 number_of_squares = 3
+user_name = str(input('What is your name?'))
+result = user_name
+screen = pygame.display.set_mode((display_width, display_height))
 
 # поверхность для вывода счета
 score_screen = pygame.font.Font(None, 36)
@@ -42,6 +44,7 @@ class Ball:
         circle(screen, self.color, [self.x, self.y], self.r)
 
 class Square:
+
     def __init__(self, x, y, r, v, color, angle):
         self.x = x
         self.y = y
@@ -87,7 +90,20 @@ def score_bar(s):
     score_text = score_screen.render(score_line, 1, (180, 0, 0))
     screen.blit(score_text, (0, 10))
 
+def recording(stroka, score):
+    stroka = str(score) + ' - ' + stroka
+    with open('score_board', 'r') as reading:
+        lines = [stroka]
+        for line in reading:
+            if line!='\n':
+                lines.append(line)
+        lines.sort()
+    with open('score_board', 'w') as writing:
+        for line in lines:
+            print(line, file=writing)
+
 pool = [] # список всех мячей
+
 for i in range(number_of_balls):
     ball = Ball(randint(100, display_width - 100),
                                   randint(100, display_height - 100),
@@ -101,8 +117,8 @@ for i in range(number_of_squares):
                                  randint(10, 70), randint(50, 100),
                                 COLORS[randint(0, 5)],randint(0, 360))
     pool.append(square)
-classes = [Ball, Square]
 
+classes = [Ball, Square] # список классов
 
 pygame.display.update()
 clock = pygame.time.Clock()
@@ -112,7 +128,7 @@ while not finished:
     clock.tick(FPS)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            print(score)
+            recording(result, score)
             finished = True
             break
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -126,23 +142,23 @@ while not finished:
                             score += 1
                     else:
                         score += 3
-                    new_item = classes[randint(0, 1)](randint(100, display_width - 100),
+                    new_item = classes[randint(0, 1)]\
+                        (randint(100, display_width - 100),
                                         randint(100, display_height - 100),
                                         randint(10, 70), randint(50, 100),
                                         COLORS[randint(0, 5)], randint(0, 360))
                     pool.remove(item)
-
                     pool.append(new_item)
-
                     miss = False
                     break
             if miss:
                 score -= 1
                 break
-            if pygame.time.get_ticks() > 20000:
-                print('You ran out of time')
-                print('Your score is', score)
-                finished = True
+        if pygame.time.get_ticks() > 20000:
+            print('You ran out of time')
+            print('Your score is', score)
+            recording(result, score)
+            finished = True
     for ball in pool:
         bump(ball)
         ball.move()
