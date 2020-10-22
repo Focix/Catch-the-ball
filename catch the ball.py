@@ -30,17 +30,18 @@ COLORS = [RED, BLUE, YELLOW, GREEN, MAGENTA, CYAN]
 
 class Ball:
 
-    def __init__(self, x, y, r, v, color, angle):
+    def __init__(self, x, y, r, v, color, angle, count):
         self.x = x
         self.y = y
         self.r = r
         self.v = v
         self.color = color
         self.angle = angle
+        self.score = count
 
     def move(self):
         """
-        Метод передвигает квадрат на новое местоположение
+        Метод передвигает круг на новое местоположение
         """
         self.x += int(self.v / FPS * np.cos(np.pi * self.angle / 180))
         self.y += int(self.v / FPS * np.sin(np.pi * self.angle / 180))
@@ -49,45 +50,50 @@ class Ball:
 
 class Square:
 
-    def __init__(self, x, y, r, v, color, angle):
+    def __init__(self, x, y, r, v, color, angle, count):
         self.x = x
         self.y = y
         self.r = r
         self.v = v
         self.color = color
         self.angle = angle
+        self.score = count
 
     def move(self):
         """
         Метод передвигает квадрат на новое местоположение
         """
-        self.x += int(self.v / FPS * np.cos(np.pi * self.angle / 180))
-        self.y += int(self.v / FPS * np.sin(np.pi * self.angle / 180))
+        self.angle += 40
+        n = randint(0, 9)
+        self.x += int(((-1) ** n) * self.v / FPS + n * self.v /
+                      FPS * np.cos(np.pi * self.angle / 180))
+        self.y += int(((-1) ** n) * self.v / FPS + n * self.v /
+                      FPS * np.sin(np.pi * self.angle / 180))
         rect(screen, self.color, [self.x - self.r // 2, self.y - self.r // 2,
                                   self.r, self.r])
 
 
 def bump(figure):
+    """
+        Функция проверяет удар фигуры о стенку и считает новый угол
+        figure - фигура на экране (квадрат или круг)
         """
-        Функция проверяет удар мячика о стенку и считает новый угол
-        ball - элемент класса Ball, хранящийся в списке pool
-        """
-        # проверка на удар в вертикальные стены
-        if figure.x + figure.r > display_width:
-            if figure.angle <= 180:
-                figure.angle = 180 - ball.angle
-            else:
-                figure.angle = 540 - ball.angle
-        if figure.x - figure.r <= 0:
-            if figure.angle <= 180:
-                figure.angle = 180 - figure.angle
-            else:
-                figure.angle = 540 - figure.angle
-        # проверка на удар в горизонтальные стены
-        if figure.y + figure.r >= display_height:
-            figure.angle = 360 - figure.angle
-        if figure.y - figure.r <= 0:
-            figure.angle = 360 - figure.angle
+    # проверка на удар в вертикальные стены
+    if figure.x + figure.r > display_width:
+        if figure.angle <= 180:
+            figure.angle = 180 - ball.angle
+        else:
+            figure.angle = 540 - ball.angle
+    if figure.x - figure.r <= 0:
+        if figure.angle <= 180:
+            figure.angle = 180 - figure.angle
+        else:
+            figure.angle = 540 - figure.angle
+    # проверка на удар в горизонтальные стены
+    if figure.y + figure.r >= display_height:
+        figure.angle = 360 - figure.angle
+    if figure.y - figure.r <= 0:
+        figure.angle = 360 - figure.angle
 
 
 def score_bar(s):
@@ -121,21 +127,40 @@ def recording(s, count):
             print(' '.join(line), file=writing)
 
 
-pool = []  # список всех мячей
+def new():
+    """
+    Функция создает новую фигуру на поле
+    """
+    n = randint(0, 1)
+    if n == 0:
+        new_item = Ball(
+            randint(100, display_width - 100),
+            randint(100, display_height - 100),
+            randint(10, 70), randint(50, 100),
+            COLORS[randint(0, 5)], randint(0, 360), 1)
+    else:
+        new_item = Square(
+            randint(100, display_width - 100),
+            randint(100, display_height - 100),
+            randint(40, 70), randint(50, 100),
+            COLORS[randint(0, 5)], randint(0, 360), 3)
+    pool.append(new_item)
+
+
+pool = []  # список всех фигур
 
 for i in range(number_of_balls):
     ball = Ball(randint(100, display_width - 100),
                 randint(100, display_height - 100), randint(10, 70),
-                randint(50, 100), COLORS[randint(0, 5)], randint(0, 360))
+                randint(50, 100), COLORS[randint(0, 5)], randint(0, 360), 1)
     pool.append(ball)
 
 for i in range(number_of_squares):
     square = Square(randint(100, display_width - 100),
-                    randint(100, display_height - 100), randint(10, 70),
-                    randint(50, 100), COLORS[randint(0, 5)], randint(0, 360))
+                    randint(100, display_height - 100), randint(40, 70),
+                    randint(50, 100), COLORS[randint(0, 5)],
+                    randint(0, 360), 3)
     pool.append(square)
-
-classes = [Ball, Square]  # список классов
 
 pygame.display.update()
 clock = pygame.time.Clock()
@@ -150,22 +175,24 @@ while not finished:
             break
         elif event.type == pygame.MOUSEBUTTONDOWN:
             for item in pool:
-                if (event.pos[0] - item.x) ** 2 + \
-                        (event.pos[1] - item.y) ** 2 <= item.r ** 2:
-                    if type(item) == Ball:
+                if type(item) == Ball:
+                    if (event.pos[0] - item.x) ** 2 + \
+                            (event.pos[1] - item.y) ** 2 <= item.r ** 2:
                         if item.r <= 20:
                             score += 2
                         else:
                             score += 1
-                    else:
-                        score += 3
-                    new_item = classes[randint(0, 1)](
-                        randint(100, display_width - 100),
-                        randint(100, display_height - 100),
-                        randint(10, 70), randint(50, 100),
-                        COLORS[randint(0, 5)], randint(0, 360))
+                        new()
+                        pool.remove(item)
+                        miss = False
+                        break
+                elif item.x - item.r // 2 < event.pos[0] < \
+                        item.x + item.r // 2 and \
+                        item.y - item.r // 2 < event.pos[1] < \
+                        item.y + item.r // 2:
+                    score += item.score
+                    new()
                     pool.remove(item)
-                    pool.append(new_item)
                     miss = False
                     break
             if miss:
